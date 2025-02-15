@@ -3,13 +3,13 @@
   "version": "0.0.1",
   "description": "CLI tool for distributed computing",
   "bin": {
-    "bitpool-cli": "cli/src/commands/cli.js"
+    "bitpool-cli": "cli/src/cli.ts"
   },
   "type": "module",
   "scripts": {
-    "dev": "nodemon --exec node --loader ts-node/esm cli/src/commands/cli.ts",
+    "dev": "nodemon --exec node --loader ts-node/esm cli/src/cli.ts",
     "build": "tsc",
-    "start": "node dist/commands/cli.js",
+    "start": "node dist/cli.js",
     "lint": "eslint cli --ext .ts", 
     "test": "jest" 
   },

@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import readline from "readline";
 import { program } from "commander";
 import dotenv from "dotenv";
