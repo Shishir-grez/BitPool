@@ -1,0 +1,5 @@
+{
+  "watch": ["cli/src"],
+  "ext": "ts",
+  "exec": "ts-node cli/src/commands/cli.ts"
+}
