@@ -1,20 +1,15 @@
 import readline from "readline";
 import { program } from "commander";
 import dotenv from "dotenv";
+import chalk from "chalk";
 
-// Load environment variables
 dotenv.config();
 
-// Dynamically import chalk since it's ESM-only
-const chalk = await import("chalk").then(mod => mod.default);
-
-// Process direct commands first (e.g., `npm start register`)
 program
   .name("bitpool")
   .description("CLI tool for distributed computing nodes")
   .version("1.0.0");
 
-// Define commands
 program
   .command("register")
   .description("Register a compute node")
@@ -31,12 +26,13 @@ program
     process.exit(0);
   });
 
-// Parse CLI arguments
-program.parse(process.argv);
-
-// If no command is provided, start interactive mode
-if (process.argv.length <= 2) {
-  console.log(chalk.blue("🚀 Bitpool CLI Started. Type 'help' for commands.\n"));
+// Check if a command was provided
+const args = process.argv.slice(2);
+if (args.length > 0) {
+  program.parse(process.argv); // Run commander for script-like execution
+} else {
+  // No command provided → Enter interactive mode
+  console.log(chalk.blue("Bitpool CLI Started. Type 'help' for commands.\n"));
 
   const rl = readline.createInterface({
     input: process.stdin,

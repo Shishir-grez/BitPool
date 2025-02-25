@@ -2,18 +2,18 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "_version": "20.1.0",
   "compilerOptions": {
-    "lib": ["es2023"], // Use ES2023 features
-    "module": "ESNext", // Use ESNext modules (ES Modules)
-    "target": "ES2022", // Compile to ES2022 JavaScript
-    "strict": true, // Enable all strict type-checking options
-    "esModuleInterop": true, // Enable ESM/CJS interoperability
-    "skipLibCheck": true, // Skip type-checking of declaration files
-    "moduleResolution": "node", // Use Node.js module resolution
-    "outDir": "./dist", // Output directory for compiled files
-    "rootDir": "./cli/src", // Root directory for TypeScript source files
-    "types": ["jest"], // Include Jest types for global variables like `describe`, `test`, etc.
+    "lib": ["es2023"], 
+    "module": "ESNext", 
+    "target": "ES2022", 
+    "strict": true, 
+    "esModuleInterop": true, 
+    "skipLibCheck": true, 
+    "moduleResolution": "node", 
+    "outDir": "./dist",
+    "rootDir": "./cli/src", 
+    "types": ["jest"], 
   },
-  "include": ["cli/src/**/*", "tests/**/*"], // Include source and test files
-  "exclude": ["node_modules", "dist"], // Exclude node_modules and dist directories
-  "extends": "@tsconfig/node20/tsconfig.json" // Extend Node.js 20 recommended config
+  "include": ["cli/src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"], 
+  "extends": "@tsconfig/node20/tsconfig.json" 
 }
