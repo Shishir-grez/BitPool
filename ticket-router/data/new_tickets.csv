@@ -1,0 +1,7 @@
+ticket_id,title,description,priority
+NEW001,F110 payment proposal missing vendor items,Payment run proposal does not include open invoices for vendor 4711 although due date passed.,P2
+NEW002,MIGO error deficit of stock,Goods receipt against purchase order 4500012 fails with deficit of stock in plant 2000.,P3
+NEW003,Production system extremely slow,"All users report slow response in production since 9am, transactions time out.",P1
+NEW004,Planned orders not created after MRP,MD01 run completed but no planned orders for finished goods in plant 1000.,P2
+NEW005,Need access to VA02,"User needs authorization to change sales orders, SU53 screenshot attached.",P4
+NEW006,Dump in Z report memory,Custom Z report dumps with TSV_TNEW_PAGE_ALLOC_FAILED when run for full year.,P2

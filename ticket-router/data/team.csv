@@ -1,0 +1,10 @@
+id,name,seniority,status,open_tickets,max_open,skills
+E01,Ravi,4,active,5,8,FI:4;CO:3
+E02,Anita,3,active,3,8,MM:4;SD:2
+E03,Karan,2,active,6,8,SD:3;MM:2
+E04,Meera,1,active,1,6,FI:2;CO:1
+E05,Joseph,3,leave,0,8,BASIS:4;ABAP:2
+E06,Priya,2,active,2,8,ABAP:3;BASIS:2
+E07,Sameer,3,left,0,8,PP:4;MM:3
+E08,Divya,2,active,4,8,PP:3;CO:2
+E09,Arjun,1,active,2,6,BASIS:2;SD:1
