@@ -3,7 +3,7 @@
 Problem: general LLMs know little about SAP and nothing about *our* team. Domain knowledge must therefore come
 from our own data. We distil it offline, store it, and feed the model only what each decision needs.
 
-## 1. Storage
+## 1. Storage (superseded by retrieval-layer.md)
 
 Volume reality check: 1M tickets × ~2 KB ≈ 2 GB of text, and 1M × 384-dim int8 vectors ≈ 0.4 GB.
 Embedded databases handle this easily. **Storage size is not the hard part; relevance is.**
