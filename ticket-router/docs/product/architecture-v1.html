@@ -1,0 +1,278 @@
+<title>Ticket Router Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&display=swap">
+<style>
+/* Layout: one wide schematic, three horizontal bands (build / serve / learn), legend above, test ladder below */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --ink:#16212a; --muted:#566673; --line:#8797a3; --band:#e9edf0;
+  --code-f:#eef2f5; --code-s:#61778a;
+  --llm-f:#f0ebfa; --llm-s:#6547be;
+  --store-f:#e5f2ef; --store-s:#1d7466;
+  --human-f:#fbf0df; --human-s:#a86b12;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11171c; --surface:#18212a; --ink:#e3e9ee; --muted:#9aabb8; --line:#6f8191; --band:#161e25;
+  --code-f:#1e2933; --code-s:#8aa0b2; --llm-f:#241d38; --llm-s:#a58cf0;
+  --store-f:#15292a; --store-s:#4fbfa9; --human-f:#2c2215; --human-s:#e0a548; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11171c; --surface:#18212a; --ink:#e3e9ee; --muted:#9aabb8; --line:#6f8191; --band:#161e25;
+  --code-f:#1e2933; --code-s:#8aa0b2; --llm-f:#241d38; --llm-s:#a58cf0;
+  --store-f:#15292a; --store-s:#4fbfa9; --human-f:#2c2215; --human-s:#e0a548; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);}
+.wrap{max-width:1280px;margin:0 auto;padding-block:28px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px}
+h1{font-family:var(--cond);font-weight:600;font-size:28px;margin:0;letter-spacing:.2px;text-wrap:balance}
+.sub{margin:6px 0 0;color:var(--muted);max-width:68ch;line-height:1.5;font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.legend li{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);padding:5px 10px;border-radius:999px;background:var(--surface)}
+.sw{width:14px;height:14px;border-radius:4px;border:1.5px solid}
+.sw.code{background:var(--code-f);border-color:var(--code-s)} .sw.llm{background:var(--llm-f);border-color:var(--llm-s)}
+.sw.store{background:var(--store-f);border-color:var(--store-s)} .sw.human{background:var(--human-f);border-color:var(--human-s)}
+.diagram{overflow-x:auto;background:var(--surface);border-radius:12px;padding:8px}
+svg{display:block;width:100%;min-width:980px;height:auto}
+svg text{fill:var(--ink);font-family:var(--sans)}
+.bandr{fill:var(--band)} .bandl{font-family:var(--mono);font-size:11px;letter-spacing:1.2px;fill:var(--muted)}
+.n rect.box{stroke-width:1.5}
+.code rect.box{fill:var(--code-f);stroke:var(--code-s)} .llm rect.box{fill:var(--llm-f);stroke:var(--llm-s)}
+.store rect.box{fill:var(--store-f);stroke:var(--store-s)} .human rect.box{fill:var(--human-f);stroke:var(--human-s)}
+.t{font-family:var(--cond)!important;font-weight:600;font-size:15px}
+.b{font-size:12.5px;fill:var(--ink)}
+.m{font-family:var(--mono)!important;font-size:10.5px;fill:var(--muted)!important}
+.pill rect{fill:var(--surface);stroke:var(--store-s);stroke-width:1.2}
+.pill text{font-size:11.5px;font-weight:500}
+.e{stroke:var(--line);stroke-width:1.5;fill:none}
+.e.dash{stroke-dasharray:5 4}
+.ge{stroke:var(--store-s);stroke-width:1.2;opacity:.8}
+.el{font-family:var(--mono)!important;font-size:9.5px;fill:var(--muted)!important}
+.ahd{fill:var(--line)}
+.ladder{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;list-style:none;margin:0;padding:0}
+.ladder li{flex:1 1 150px;min-width:0;background:var(--surface);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.ladder b{font-family:var(--mono);font-size:12px;color:var(--llm-s)}
+.ladder span{font-size:13px;line-height:1.4}
+.ladder li.target{outline:1.5px solid var(--llm-s)}
+h2{font-family:var(--cond);font-size:17px;margin:0}
+.note{font-size:13px;color:var(--muted);margin:0;line-height:1.5}
+</style>
+
+<div class="wrap">
+<header>
+  <div>
+    <h1>Ticket Router v1</h1>
+    <p class="sub">Bounded agentic retrieval over a temporal Team Experience Graph. A calibrated LLM judge recommends a resolver or abstains, and every decision feeds the next version.</p>
+  </div>
+  <ul class="legend" aria-label="Legend">
+    <li><span class="sw code"></span>Code, deterministic</li>
+    <li><span class="sw llm"></span>LLM step</li>
+    <li><span class="sw store"></span>Stored data</li>
+    <li><span class="sw human"></span>Person</li>
+  </ul>
+</header>
+
+<div class="diagram">
+<svg viewBox="0 0 1240 980" role="img" aria-label="Ticket Router v1 architecture: build, serve and learn bands">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="ahd"/>
+    </marker>
+  </defs>
+
+  <!-- Bands -->
+  <rect class="bandr" x="16" y="20" width="1208" height="310" rx="12"/>
+  <rect class="bandr" x="16" y="345" width="1208" height="395" rx="12"/>
+  <rect class="bandr" x="16" y="755" width="1208" height="210" rx="12"/>
+  <text class="bandl" x="30" y="44">BUILD · OFFLINE, INCREMENTAL</text>
+  <text class="bandl" x="30" y="368">SERVE · PER TICKET</text>
+  <text class="bandl" x="30" y="779">LEARN · FROM DECISIONS</text>
+
+  <!-- BUILD -->
+  <g class="n code"><rect class="box" x="30" y="60" width="180" height="170" rx="8"/>
+    <text class="t" x="46" y="86">Sources</text>
+    <text class="b" x="46" y="110">Ticket history export</text>
+    <text class="b" x="46" y="128">Team roster, leave, load</text>
+    <text class="b" x="46" y="146">KB and module playbooks</text>
+  </g>
+  <g class="n llm"><rect class="box" x="245" y="60" width="250" height="170" rx="8"/>
+    <text class="t" x="261" y="86">Normalise &amp; enrich</text>
+    <text class="b" x="261" y="110">Section tree per ticket</text>
+    <text class="b" x="261" y="128">Contextual card per ticket</text>
+    <text class="b" x="261" y="146">SAP entities, controlled vocab</text>
+    <text class="b" x="261" y="164">Raw and normalised views kept</text>
+    <text class="m" x="261" y="212">LLM as feature augmenter · cached</text>
+  </g>
+  <g class="n code"><rect class="box" x="530" y="60" width="210" height="170" rx="8"/>
+    <text class="t" x="546" y="86">Indexes</text>
+    <text class="b" x="546" y="110">BM25, primary ranker</text>
+    <text class="b" x="546" y="128">Dense vectors</text>
+    <text class="b" x="546" y="146">SAP entity exact match</text>
+    <text class="b" x="546" y="164">Typed temporal edges</text>
+  </g>
+  <g class="n store"><rect class="box" x="775" y="60" width="440" height="170" rx="8"/>
+    <text class="t" x="791" y="86">Team Experience Graph</text>
+    <text class="m" x="1199" y="86" text-anchor="end">Postgres · pgvector · BM25</text>
+    <text class="m" x="791" y="104">every fact carries valid_from / valid_to</text>
+    <line class="ge" x1="845" y1="143" x2="845" y2="189"/>
+    <line class="ge" x1="895" y1="200" x2="950" y2="166"/>
+    <line class="ge" x1="1050" y1="166" x2="1100" y2="132"/>
+    <line class="ge" x1="1050" y1="166" x2="1100" y2="200"/>
+    <text class="el" x="852" y="170">MEMBER_OF</text>
+    <text class="el" x="903" y="214">RESOLVED</text>
+    <text class="el" x="1040" y="136">MENTIONS</text>
+    <text class="el" x="1032" y="208">INSTANCE_OF</text>
+    <g class="pill"><rect x="795" y="121" width="100" height="22" rx="11"/><text x="845" y="136" text-anchor="middle">Team</text></g>
+    <g class="pill"><rect x="795" y="189" width="100" height="22" rx="11"/><text x="845" y="204" text-anchor="middle">Person</text></g>
+    <g class="pill"><rect x="950" y="155" width="100" height="22" rx="11"/><text x="1000" y="170" text-anchor="middle">Ticket</text></g>
+    <g class="pill"><rect x="1100" y="121" width="100" height="22" rx="11"/><text x="1150" y="136" text-anchor="middle">SAP entity</text></g>
+    <g class="pill"><rect x="1100" y="189" width="100" height="22" rx="11"/><text x="1150" y="204" text-anchor="middle">Pattern</text></g>
+  </g>
+  <path class="e" d="M210 145 H243" marker-end="url(#ah)"/>
+  <path class="e" d="M495 145 H528" marker-end="url(#ah)"/>
+  <path class="e" d="M740 145 H773" marker-end="url(#ah)"/>
+
+  <g class="n code"><rect class="box" x="530" y="270" width="685" height="50" rx="8"/>
+    <text class="t" x="546" y="291">Fact API</text>
+    <text class="m" x="616" y="291">typed tools, every call takes as_of</text>
+    <text class="m" x="546" y="310">similar_tickets · experts_for · person · availability · ticket · docs_for · module_playbook</text>
+  </g>
+  <path class="e" d="M995 230 V268" marker-end="url(#ah)"/>
+  <text class="el" x="1003" y="254">read-only</text>
+
+  <!-- SERVE row 1 -->
+  <g class="n code"><rect class="box" x="30" y="380" width="150" height="120" rx="8"/>
+    <text class="t" x="46" y="406">New ticket</text>
+    <text class="b" x="46" y="430">Title, priority, text</text>
+    <text class="b" x="46" y="448">Text treated as data,</text>
+    <text class="b" x="46" y="466">never as instructions</text>
+  </g>
+  <g class="n llm"><rect class="box" x="215" y="380" width="200" height="120" rx="8"/>
+    <text class="t" x="231" y="406">1 · Understand</text>
+    <text class="b" x="231" y="430">Sections and SAP entities</text>
+    <text class="b" x="231" y="448">Normalised card, written</text>
+    <text class="b" x="231" y="466">like the stored cards</text>
+  </g>
+  <g class="n code"><rect class="box" x="450" y="380" width="230" height="120" rx="8"/>
+    <text class="t" x="466" y="406">2 · Discover</text>
+    <text class="b" x="466" y="430">BM25 + dense + entity match</text>
+    <text class="b" x="466" y="448">RRF fusion, then rerank</text>
+    <text class="b" x="466" y="466">→ similar past tickets</text>
+  </g>
+  <g class="n code"><rect class="box" x="715" y="380" width="230" height="120" rx="8"/>
+    <text class="t" x="731" y="406">3 · Expand</text>
+    <text class="b" x="731" y="430">Graph walk, 1–2 hops</text>
+    <text class="b" x="731" y="448">→ candidate people</text>
+    <text class="b" x="731" y="466">Stats computed in code</text>
+  </g>
+  <g class="n code"><rect class="box" x="980" y="380" width="235" height="120" rx="8"/>
+    <text class="t" x="996" y="406">4 · Constrain</text>
+    <text class="b" x="996" y="430">Availability and capacity</text>
+    <text class="b" x="996" y="448">Seniority vs priority</text>
+    <text class="b" x="996" y="466">Rules in YAML, not the LLM</text>
+  </g>
+  <path class="e" d="M180 440 H213" marker-end="url(#ah)"/>
+  <path class="e" d="M415 440 H448" marker-end="url(#ah)"/>
+  <path class="e" d="M680 440 H713" marker-end="url(#ah)"/>
+  <path class="e" d="M945 440 H978" marker-end="url(#ah)"/>
+  <path class="e dash" d="M565 322 V378" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <path class="e dash" d="M830 322 V378" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <path class="e dash" d="M1097 322 V378" marker-start="url(#ah)" marker-end="url(#ah)"/>
+
+  <!-- SERVE row 2 (right to left) -->
+  <g class="n llm"><rect class="box" x="980" y="560" width="235" height="140" rx="8"/>
+    <text class="t" x="996" y="586">5 · Refine</text>
+    <text class="b" x="996" y="610">Up to 2 more searches</text>
+    <text class="b" x="996" y="628">through the Fact API</text>
+    <text class="b" x="996" y="646">Token and round budget</text>
+  </g>
+  <g class="n llm"><rect class="box" x="715" y="560" width="230" height="140" rx="8"/>
+    <text class="t" x="731" y="586">6 · Decide</text>
+    <text class="b" x="731" y="610">Rank 3–5 candidates</text>
+    <text class="b" x="731" y="628">Run twice, shuffled order</text>
+    <text class="b" x="731" y="646">JSON schema output</text>
+    <text class="m" x="731" y="684">ctx L0 cached · L1 pushed · L2 by id</text>
+  </g>
+  <g class="n code"><rect class="box" x="450" y="560" width="230" height="140" rx="8"/>
+    <text class="t" x="466" y="586">7 · Calibrate</text>
+    <text class="b" x="466" y="610">Agreement + score</text>
+    <text class="b" x="466" y="628">Conformal threshold</text>
+    <text class="b" x="466" y="646">→ answer or abstain</text>
+  </g>
+  <g class="n code"><rect class="box" x="215" y="560" width="200" height="140" rx="8"/>
+    <text class="t" x="231" y="586">8 · Validate &amp; explain</text>
+    <text class="b" x="231" y="610">Every cited ID checked</text>
+    <text class="b" x="231" y="628">Reasons cite ticket IDs</text>
+  </g>
+  <g class="n code"><rect class="box" x="30" y="560" width="150" height="140" rx="8"/>
+    <text class="t" x="46" y="586">Output</text>
+    <text class="b" x="46" y="610">Top 3 with evidence</text>
+    <text class="b" x="46" y="628">or abstain,</text>
+    <text class="b" x="46" y="646">routed to the lead</text>
+  </g>
+  <path class="e" d="M1097 500 V558" marker-end="url(#ah)"/>
+  <text class="el" x="1105" y="534">evidence thin</text>
+  <path class="e dash" d="M1010 500 L922 558" marker-end="url(#ah)"/>
+  <text class="el" x="955" y="524" text-anchor="end">enough → skip</text>
+  <path class="e" d="M980 630 H947" marker-end="url(#ah)"/>
+  <path class="e" d="M715 630 H682" marker-end="url(#ah)"/>
+  <path class="e" d="M450 630 H417" marker-end="url(#ah)"/>
+  <path class="e" d="M215 630 H182" marker-end="url(#ah)"/>
+  <path class="e dash" d="M1215 610 H1232 V295 H1217" marker-end="url(#ah)"/>
+
+  <!-- LEARN -->
+  <g class="n human"><rect class="box" x="30" y="800" width="180" height="130" rx="8"/>
+    <text class="t" x="46" y="826">Dispatcher / lead</text>
+    <text class="b" x="46" y="850">Accepts or overrides,</text>
+    <text class="b" x="46" y="868">with a reason</text>
+  </g>
+  <g class="n store"><rect class="box" x="245" y="800" width="200" height="130" rx="8"/>
+    <text class="t" x="261" y="826">Decision log</text>
+    <text class="b" x="261" y="850">Every recommendation</text>
+    <text class="b" x="261" y="868">and its outcome</text>
+    <text class="m" x="261" y="912">model + prompt version</text>
+  </g>
+  <g class="n store"><rect class="box" x="480" y="800" width="210" height="80" rx="8"/>
+    <text class="t" x="496" y="826">(a) Exemplar store</text>
+    <text class="b" x="496" y="850">Accepted cases as few-shot</text>
+  </g>
+  <g class="n llm"><rect class="box" x="725" y="800" width="220" height="130" rx="8"/>
+    <text class="t" x="741" y="826">(b) Fine-tuned decider</text>
+    <text class="b" x="741" y="850">LoRA fine-tune of a small</text>
+    <text class="b" x="741" y="868">reasoning LLM</text>
+    <text class="m" x="741" y="912">phase 2 · LIA-style</text>
+  </g>
+  <g class="n code"><rect class="box" x="980" y="800" width="235" height="130" rx="8"/>
+    <text class="t" x="996" y="826">Eval harness</text>
+    <text class="b" x="996" y="850">Time-split backtest, as_of</text>
+    <text class="b" x="996" y="868">Ladder B0 → V2</text>
+    <text class="m" x="996" y="912">MRR · Hit@k · ECE · cost</text>
+  </g>
+  <path class="e" d="M105 700 V798" marker-end="url(#ah)"/>
+  <text class="el" x="113" y="758">shown to</text>
+  <path class="e" d="M210 865 H243" marker-end="url(#ah)"/>
+  <path class="e" d="M445 840 H478" marker-end="url(#ah)"/>
+  <path class="e" d="M445 912 H723" marker-end="url(#ah)"/>
+  <text class="el" x="585" y="905" text-anchor="middle">training data</text>
+  <path class="e dash" d="M585 800 V745 H760 V702" marker-end="url(#ah)"/>
+  <text class="el" x="593" y="764">few-shot</text>
+  <path class="e dash" d="M835 800 V702" marker-end="url(#ah)"/>
+  <text class="el" x="843" y="764">can replace judge</text>
+  <path class="e dash" d="M345 930 V950 H1097 V932" marker-end="url(#ah)"/>
+  <text class="el" x="720" y="945" text-anchor="middle">replayed by eval</text>
+</svg>
+</div>
+
+<section style="display:flex;flex-direction:column;gap:10px">
+  <h2>Test ladder</h2>
+  <p class="note">Same time-split test set for every rung. A rung that does not beat the one below it is removed.</p>
+  <ol class="ladder">
+    <li><b>B0</b><span>Most frequent resolver per module</span></li>
+    <li><b>B1</b><span>BM25 vote over similar tickets</span></li>
+    <li><b>B2</b><span>LinkedIn 2024 replica, the brute-force baseline</span></li>
+    <li><b>B3</b><span>B2 + hybrid search, contextual cards, rerank</span></li>
+    <li class="target"><b>V1</b><span>This architecture</span></li>
+    <li><b>V2</b><span>V1 + fine-tuned decider</span></li>
+  </ol>
+</section>
+</div>
