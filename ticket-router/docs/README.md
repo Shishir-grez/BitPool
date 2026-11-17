@@ -4,7 +4,7 @@
 |---|---|---|
 | [product/](product/) | Product design (design-v0.md), context tiers (intelligence-layer.md), fact retrieval layer (retrieval-layer.md), core architecture (architecture-core.md) | **Active** |
 | [deployment/](deployment/) | Where/how it runs: company laptop (local CPU) vs personal/cloud POC | Parked |
+| [research/](research/) | Paper notes (LinkedIn KG-RAG) | Reference |
 | [data/](data/) | Sourcing SAP-support-style ticket data for the POC | Parked |
 
 See [TODO.md](TODO.md) for the parked work.
-| [research/](research/) | Paper notes (LinkedIn KG-RAG) | Reference |
